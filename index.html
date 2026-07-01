@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dimensioná tu sistema solar - SGV Solar</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, Arial, sans-serif; background:#f5f5f3; margin:0; padding:24px 16px; color:#1a1a1a; }
+  .card { max-width: 560px; margin: 0 auto; background:#fff; border-radius:14px; padding:28px 24px; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+  .logo { font-size:13px; font-weight:600; color:#1a7a4c; margin-bottom:16px; letter-spacing:0.5px; }
+  h1 { font-size:18px; font-weight:600; margin:0 0 4px; }
+  .paso-label { font-size:13px; color:#888; margin:0 0 18px; }
+  .stepper { display:flex; gap:6px; margin-bottom:22px; }
+  .dot { flex:1; height:4px; border-radius:2px; background:#e3e3df; transition: background 0.3s; }
+  .dot.active { background:#1a7a4c; }
+  .group { margin-bottom:18px; }
+  label.q { display:block; font-size:14px; font-weight:600; margin-bottom:6px; }
+  input[type=text], input[type=tel], input[type=email], input[type=number], select {
+    width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px; font-size:14px; background:#fafaf9; outline:none;
+  }
+  input:focus, select:focus { border-color:#1a7a4c; }
+  .pills { display:flex; flex-wrap:wrap; gap:8px; }
+  .pill {
+    background:#fafaf9; border:1px solid #ddd; border-radius:10px; padding:10px 14px;
+    cursor:pointer; font-size:13px; color:#1a1a1a; text-align:left; transition: all 0.15s;
+  }
+  .pill.card-pill { display:flex; flex-direction:column; gap:2px; min-width:150px; }
+  .pill small { color:#888; font-size:11px; }
+  .pill[aria-pressed="true"] { background:#e8f3ec; border-color:#1a7a4c; color:#0f5a35; font-weight:500; }
+  .step { display:none; }
+  .step.active { display:block; }
+  .nav { display:flex; justify-content:space-between; margin-top:22px; }
+  button.nav-btn {
+    background:#fff; border:1px solid #ccc; border-radius:8px; padding:10px 20px;
+    font-size:14px; cursor:pointer; transition: all 0.15s;
+  }
+  button.nav-btn.primary { background:#1a7a4c; color:#fff; border-color:#1a7a4c; }
+  button.nav-btn.primary:hover { background:#155f3c; }
+  button.nav-btn:disabled { opacity:0.4; cursor:default; }
+  .ayuda { display:none; background:#f5f5f3; border-radius:8px; padding:10px 12px; font-size:12px; color:#555; margin-top:8px; line-height:1.5; }
+  .electro-row { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid #eee; }
+  .electro-row label { flex:1; font-size:13px; }
+  .electro-row input[type=number] { width:80px; }
+  .resultado-box { background:#f0f7f2; border-radius:12px; padding:18px; margin-bottom:14px; border:1px solid #c5e0cf; }
+  .resultado-box .titulo { font-size:13px; color:#2d6a4f; margin:0 0 6px; }
+  .resultado-box .big { font-size:24px; font-weight:600; color:#1a1a1a; margin:4px 0; }
+  .resultado-box .sub { font-size:14px; color:#444; margin:4px 0; }
+  .nota { font-size:12px; color:#888; margin-top:4px; }
+  a.link { color:#1a7a4c; text-decoration:none; }
+  .dropzone { display:inline-flex; align-items:center; gap:8px; border:1px dashed #bbb; border-radius:8px; padding:10px 14px; cursor:pointer; font-size:13px; color:#555; }
+  .dropzone:hover { border-color:#1a7a4c; color:#1a7a4c; }
+  .dropzone input { display:none; }
+  .loading-wrap { text-align:center; padding:24px 0; }
+  .spinner { width:32px; height:32px; border:3px solid #e3e3df; border-top-color:#1a7a4c; border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-box { background:#fff3f3; border:1px solid #f5c5c5; border-radius:10px; padding:14px; font-size:13px; color:#c0392b; }
+  .badge-offgrid { display:inline-block; background:#fff8e1; border:1px solid #f0c040; border-radius:6px; padding:3px 8px; font-size:11px; color:#856404; margin-bottom:8px; }
+  .badge-ongrid { display:inline-block; background:#e8f3ec; border:1px solid #1a7a4c; border-radius:6px; padding:3px 8px; font-size:11px; color:#0f5a35; margin-bottom:8px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">⚡ SGV SOLAR</div>
+  <h1>Dimensioná tu sistema solar</h1>
+  <p class="paso-label" id="pasoLabel">Paso 1 de 5 · Tus datos</p>
+  <div class="stepper" id="stepper"></div>
+
+  <form id="pvform" onsubmit="return false;">
+
+    <!-- PASO 1 -->
+    <div class="step active" data-step="1">
+      <div class="group">
+        <label class="q">¿Cómo te llamás?</label>
+        <input type="text" id="f-nombre" placeholder="Nombre y apellido" autocomplete="name">
+      </div>
+      <div class="group">
+        <label class="q">¿Tu WhatsApp?</label>
+        <input type="tel" id="f-wsp" placeholder="351 123 4567" autocomplete="tel">
+      </div>
+      <div class="group">
+        <label class="q">¿Tu mail?</label>
+        <input type="email" id="f-mail" placeholder="nombre@mail.com" autocomplete="email">
+      </div>
+    </div>
+
+    <!-- PASO 2 -->
+    <div class="step" data-step="2">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="group">
+          <label class="q">Ciudad</label>
+          <input type="text" id="f-ciudad" placeholder="Córdoba">
+        </div>
+        <div class="group">
+          <label class="q">Provincia</label>
+          <select id="f-provincia">
+            <option value="Cordoba">Córdoba</option>
+            <option value="SantaFe">Santa Fe</option>
+            <option value="BuenosAires">Buenos Aires</option>
+            <option value="Tucuman">Tucumán</option>
+            <option value="Salta">Salta</option>
+            <option value="Jujuy">Jujuy</option>
+            <option value="Catamarca">Catamarca</option>
+            <option value="LaRioja">La Rioja</option>
+            <option value="Santiago">Santiago del Estero</option>
+            <option value="Chaco">Chaco</option>
+            <option value="Otra">Otra</option>
+          </select>
+        </div>
+      </div>
+      <div class="group">
+        <label class="q">¿Para qué es el sistema?</label>
+        <div class="pills" id="perfil-pills">
+          <button type="button" class="pill card-pill" data-value="Casa">🏠 Casa<small>vivienda familiar</small></button>
+          <button type="button" class="pill card-pill" data-value="Negocio">🏪 Negocio / empresa<small>comercio, fábrica, oficina</small></button>
+          <button type="button" class="pill card-pill" data-value="Campo">🌾 Campo<small>rural, agropecuario</small></button>
+        </div>
+      </div>
+      <div id="bloque-casa" class="group" style="display:none">
+        <label class="q">¿Tu rutina diaria es más bien...?</label>
+        <div class="pills" id="rutina-pills">
+          <button type="button" class="pill card-pill" data-value="0.25">Mayormente fuera de casa<small>trabajo, escuela, salidas</small></button>
+          <button type="button" class="pill card-pill" data-value="0.5">Mitad y mitad<small>algunos días en casa</small></button>
+          <button type="button" class="pill card-pill" data-value="0.75">Casi siempre en casa<small>home office, jubilados</small></button>
+        </div>
+      </div>
+      <div id="bloque-negocio" class="group" style="display:none">
+        <label class="q">¿Cómo es tu consumo nocturno?</label>
+        <div class="pills" id="negocio-pills">
+          <button type="button" class="pill card-pill" data-value="0.15">Solo horario diurno<small>cierro y corto todo</small></button>
+          <button type="button" class="pill card-pill" data-value="0.3">Consumo bajo de noche<small>cámaras, alarma, stand-by</small></button>
+          <button type="button" class="pill card-pill" data-value="0.55">Consumo alto de noche<small>heladeras, freezers, producción</small></button>
+        </div>
+      </div>
+      <div id="bloque-campo" class="group" style="display:none">
+        <label class="q">¿Tenés red eléctrica en el campo?</label>
+        <div class="pills" id="red-pills">
+          <button type="button" class="pill" data-value="si">✅ Sí, tengo red</button>
+          <button type="button" class="pill" data-value="no">🔋 No, sin red (off-grid)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASO 3 -->
+    <div class="step" data-step="3">
+      <div id="bloque-ongrid">
+        <div class="group">
+          <label class="q">¿Cuántos kWh consumís por mes?</label>
+          <input type="number" id="f-kwh-mes" placeholder="Ej: 450" min="0">
+          <p class="nota">¿No sabés leer tu factura? <a href="#" class="link" id="link-factura">Tocá acá para ayuda</a></p>
+          <div class="ayuda" id="ayuda-factura">
+            Buscá el campo <strong>"Energía consumida"</strong> o <strong>"kWh"</strong> del período facturado. Aparece en la primera hoja de tu factura, cerca del total a pagar. Si tenés EPEC (Córdoba) aparece como "Energía Activa".
+          </div>
+        </div>
+        <div class="group">
+          <label class="q">¿Tenés el consumo anual? <span style="font-weight:400;color:#888">(opcional)</span></label>
+          <input type="number" id="f-kwh-anio" placeholder="Ej: 5400" min="0">
+        </div>
+        <div class="group">
+          <label class="q">Foto de tu factura <span style="font-weight:400;color:#888">(opcional, para más precisión)</span></label>
+          <label class="dropzone">
+            📎 <span id="dropzone-texto">Subir foto o PDF</span>
+            <input type="file" id="f-factura" accept="image/*,.pdf">
+          </label>
+        </div>
+        <div class="group">
+          <label class="q">¿Tu conexión es...?</label>
+          <div class="pills" id="fase-pills">
+            <button type="button" class="pill card-pill" data-value="mono">Monofásica<small>la mayoría de las casas</small></button>
+            <button type="button" class="pill card-pill" data-value="tri">Trifásica<small>industrias, grandes comercios</small></button>
+          </div>
+        </div>
+      </div>
+
+      <div id="bloque-offgrid" style="display:none">
+        <p style="font-size:13px;color:#555;margin:0 0 12px">Marcá los equipos que querés alimentar y cuántas horas por día los usás:</p>
+        <div id="electro-list"></div>
+      </div>
+    </div>
+
+    <!-- PASO 4 -->
+    <div class="step" data-step="4">
+      <div class="group">
+        <label class="q">¿Cómo es tu techo?</label>
+        <div class="pills" id="techo-pills">
+          <button type="button" class="pill card-pill" data-value="dosaguas">
+            <svg width="52" height="32" viewBox="0 0 52 32" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 28 L26 6 L48 28"/><line x1="4" y1="28" x2="48" y2="28"/></svg>
+            Dos aguas
+          </button>
+          <button type="button" class="pill card-pill" data-value="plano">
+            <svg width="52" height="32" viewBox="0 0 52 32" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="12" width="40" height="14" rx="1"/></svg>
+            Plano (losa)
+          </button>
+        </div>
+      </div>
+      <div class="group">
+        <label class="q">¿Hacia dónde orienta el techo? <span style="font-weight:400;color:#888">(opcional)</span></label>
+        <select id="f-orientacion">
+          <option value="">No lo sé / No importa (losa)</option>
+          <option value="N">Norte</option>
+          <option value="NE">Noreste</option>
+          <option value="E">Este</option>
+          <option value="SE">Sureste</option>
+          <option value="S">Sur</option>
+          <option value="SO">Suroeste</option>
+          <option value="O">Oeste</option>
+          <option value="NO">Noroeste</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- PASO 5: RESULTADO -->
+    <div class="step" data-step="5">
+      <div id="resultado-box"></div>
+    </div>
+
+  </form>
+
+  <div class="nav">
+    <button type="button" class="nav-btn" id="btn-back" disabled>← Volver</button>
+    <button type="button" class="nav-btn primary" id="btn-next">Continuar →</button>
+  </div>
+</div>
+
+<script>
+// ===== URL DEL APPS SCRIPT (backend) =====
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby4--Ux9c2bSZpvNvjgQ4s-LcxOdcDHqALOr7vKUP5afd14R8ZFvWKVFPvFyNs8Owm7/exec';
+
+var state = { perfil:null, rutina:null, red:null, fase:null, techo:null, electro:{}, facturaFile:null };
+var step = 1;
+var totalSteps = 5;
+var pasoLabels = ['','Paso 1 de 5 · Tus datos','Paso 2 de 5 · Ubicación y perfil','Paso 3 de 5 · Consumo eléctrico','Paso 4 de 5 · Techo','Resultado preliminar'];
+
+// Stepper
+var stepperEl = document.getElementById('stepper');
+for (var i = 0; i < totalSteps; i++) {
+  var d = document.createElement('div'); d.className = 'dot'; stepperEl.appendChild(d);
+}
+function renderStepper() {
+  var dots = stepperEl.children;
+  for (var i = 0; i < dots.length; i++) dots[i].className = 'dot' + (i < step ? ' active' : '');
+}
+
+// Pills
+function pillGroup(id, onSelect) {
+  var group = document.getElementById(id);
+  if (!group) return;
+  group.querySelectorAll('.pill').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      group.querySelectorAll('.pill').forEach(function(b) { b.setAttribute('aria-pressed','false'); });
+      btn.setAttribute('aria-pressed','true');
+      onSelect(btn.getAttribute('data-value'));
+    });
+  });
+}
+
+pillGroup('perfil-pills', function(v) {
+  state.perfil = v;
+  document.getElementById('bloque-casa').style.display    = v==='Casa'    ? 'block' : 'none';
+  document.getElementById('bloque-negocio').style.display = v==='Negocio' ? 'block' : 'none';
+  document.getElementById('bloque-campo').style.display   = v==='Campo'   ? 'block' : 'none';
+});
+pillGroup('rutina-pills',  function(v) { state.rutina = v; });
+pillGroup('negocio-pills', function(v) { state.rutina = v; });
+pillGroup('red-pills',     function(v) { state.red = v; });
+pillGroup('fase-pills',    function(v) { state.fase = v; });
+pillGroup('techo-pills',   function(v) { state.techo = v; });
+
+// Ayuda factura
+document.getElementById('link-factura').addEventListener('click', function(e) {
+  e.preventDefault();
+  var box = document.getElementById('ayuda-factura');
+  box.style.display = box.style.display === 'none' ? 'block' : 'none';
+});
+
+// Factura file
+document.getElementById('f-factura').addEventListener('change', function(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('dropzone-texto').textContent = file.name;
+  var reader = new FileReader();
+  reader.onload = function() {
+    state.facturaFile = { base64: reader.result.split(',')[1], mimeType: file.type, fileName: file.name };
+  };
+  reader.readAsDataURL(file);
+});
+
+// Electrodomésticos off-grid
+var electrodomesticos = [
+  { nombre:'Heladera', w:150 },
+  { nombre:'Bomba de agua', w:750 },
+  { nombre:'Iluminación LED (por ambiente)', w:15 },
+  { nombre:'Televisor', w:100 },
+  { nombre:'Cargador celular / radio', w:20 },
+  { nombre:'Freezer', w:200 },
+  { nombre:'Electrobomba de riego', w:1100 },
+  { nombre:'Lavarropas', w:500 },
+  { nombre:'Ventilador', w:60 }
+];
+var listEl = document.getElementById('electro-list');
+electrodomesticos.forEach(function(item, idx) {
+  var row = document.createElement('div');
+  row.className = 'electro-row';
+  row.innerHTML = '<input type="checkbox" id="el-'+idx+'"><label for="el-'+idx+'">'+item.nombre+' <span class="nota">('+item.w+'W)</span></label><input type="number" id="hr-'+idx+'" placeholder="hs/día" min="0" max="24" disabled style="width:80px">';
+  listEl.appendChild(row);
+  var chk = row.querySelector('#el-'+idx);
+  var hrs = row.querySelector('#hr-'+idx);
+  chk.addEventListener('change', function() {
+    hrs.disabled = !chk.checked;
+    if (!chk.checked) { hrs.value=''; delete state.electro[idx]; }
+  });
+  hrs.addEventListener('input', function() {
+    state.electro[idx] = { w:item.w, hr:parseFloat(hrs.value)||0, nombre:item.nombre };
+  });
+});
+
+function showStep(n) {
+  document.querySelectorAll('.step').forEach(function(s) { s.classList.remove('active'); });
+  document.querySelector('.step[data-step="'+n+'"]').classList.add('active');
+  document.getElementById('pasoLabel').textContent = pasoLabels[n];
+  document.getElementById('btn-back').disabled = n === 1;
+  var btnNext = document.getElementById('btn-next');
+  if (n === totalSteps) {
+    btnNext.textContent = 'Enviar otra consulta';
+  } else if (n === 4) {
+    btnNext.textContent = 'Ver estimación →';
+  } else {
+    btnNext.textContent = 'Continuar →';
+  }
+  if (n === 3) {
+    var off = state.perfil === 'Campo' && state.red === 'no';
+    document.getElementById('bloque-ongrid').style.display  = off ? 'none' : 'block';
+    document.getElementById('bloque-offgrid').style.display = off ? 'block' : 'none';
+  }
+  if (n === 5) enviarFormulario();
+  renderStepper();
+  window.scrollTo(0,0);
+}
+
+function recolectarElectro() {
+  return Object.keys(state.electro).map(function(k) { return state.electro[k]; });
+}
+
+function enviarFormulario() {
+  var box = document.getElementById('resultado-box');
+  box.innerHTML = '<div class="loading-wrap"><div class="spinner"></div><p style="font-size:13px;color:#888">Calculando tu estimación...</p></div>';
+
+  var payload = {
+    nombre:    document.getElementById('f-nombre').value,
+    wsp:       document.getElementById('f-wsp').value,
+    mail:      document.getElementById('f-mail').value,
+    ciudad:    document.getElementById('f-ciudad').value,
+    provincia: document.getElementById('f-provincia').value,
+    perfil:    state.perfil,
+    rutina:    state.rutina,
+    red:       state.red,
+    kwhMes:    document.getElementById('f-kwh-mes').value,
+    kwhAnio:   document.getElementById('f-kwh-anio').value,
+    fase:      state.fase,
+    electrodomesticos: recolectarElectro(),
+    techo:     state.techo,
+    orientacion: document.getElementById('f-orientacion').value,
+    facturaFile: state.facturaFile
+  };
+
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (data.ok) {
+      mostrarResultado(data.resultado);
+    } else {
+      box.innerHTML = '<div class="error-box">Hubo un error al procesar tu consulta: ' + (data.error||'Error desconocido') + '</div>';
+    }
+  })
+  .catch(function(err) {
+    // Si hay error de CORS en fetch, calculamos localmente como fallback
+    mostrarResultado(calcularLocal(payload));
+  });
+}
+
+// Cálculo local como fallback si el fetch falla por CORS
+var HSP_LOCAL = { Cordoba:4.8,SantaFe:4.6,BuenosAires:4.4,Tucuman:5.0,Salta:5.4,Jujuy:5.5,Catamarca:5.3,LaRioja:5.3,Santiago:5.1,Chaco:5.0,Otra:4.8 };
+function calcularLocal(p) {
+  var hsp = HSP_LOCAL[p.provincia] || 4.8;
+  if (p.perfil==='Campo' && p.red==='no') {
+    var consumoDiarioWh=0;
+    (p.electrodomesticos||[]).forEach(function(e){consumoDiarioWh+=e.w*e.hr;});
+    if(!consumoDiarioWh) return {tipo:'offgrid',error:'Sin consumo cargado'};
+    var bancoAh=(consumoDiarioWh*1.5)/(0.5*12);
+    var paneles=Math.ceil(consumoDiarioWh/(hsp*0.85*630));
+    return {tipo:'offgrid',bancoAh:Math.round(bancoAh),paneles:paneles,potenciaInstaladaKw:Number((paneles*630/1000).toFixed(2)),voltajeSistema:12,autonomiaDias:1.5};
+  }
+  var kwhMes=parseFloat(p.kwhMes)||0;
+  if(!kwhMes&&p.kwhAnio) kwhMes=parseFloat(p.kwhAnio)/12;
+  if(!kwhMes) return {tipo:'ongrid',error:'Sin consumo cargado'};
+  var potGen=kwhMes/(hsp*30*0.75);
+  var paneles=Math.ceil(potGen*1000/630);
+  return {tipo:'ongrid',potenciaGeneracionKw:Number(potGen.toFixed(2)),paneles:paneles,potenciaInstaladaKw:Number((paneles*630/1000).toFixed(2))};
+}
+
+function mostrarResultado(r) {
+  var box = document.getElementById('resultado-box');
+  if (r.error) {
+    box.innerHTML = '<div class="error-box">'+r.error+'. Volvé al paso anterior para completar el consumo.</div>';
+    return;
+  }
+  if (r.tipo === 'offgrid') {
+    box.innerHTML =
+      '<span class="badge-offgrid">🔋 Sistema OFF-GRID</span>'+
+      '<div class="resultado-box">'+
+      '<p class="titulo">Potencia instalada estimada</p>'+
+      '<p class="big">'+r.potenciaInstaladaKw+' kW</p>'+
+      '<p class="sub">'+r.paneles+' paneles de 630W aprox.</p>'+
+      '<p class="sub">Banco de baterías: ~'+r.bancoAh+' Ah a '+r.voltajeSistema+'V</p>'+
+      '<p class="sub">Autonomía: '+r.autonomiaDias+' días sin sol</p>'+
+      '</div>'+
+      '<p class="nota">⚠️ Este es un cálculo preliminar basado en los datos que ingresaste. El sistema real se define con un relevamiento técnico detallado de tu situación.</p>'+
+      '<p style="font-size:13px;margin-top:14px">✅ <strong>Nos contactamos a la brevedad</strong> para darte una propuesta personalizada.</p>';
+  } else {
+    box.innerHTML =
+      '<span class="badge-ongrid">☀️ Sistema ON-GRID</span>'+
+      '<div class="resultado-box">'+
+      '<p class="titulo">Con los datos proporcionados necesitás un equipo de</p>'+
+      '<p class="big">'+r.potenciaGeneracionKw+' kW de generación</p>'+
+      '<p class="sub">'+r.potenciaInstaladaKw+' kW de potencia instalada</p>'+
+      '<p class="sub">'+r.paneles+' placas de 630W aprox.</p>'+
+      '</div>'+
+      '<p class="nota">⚠️ Este es un cálculo aproximado. El sistema real se va a calcular pidiendo más información y haciendo un relevamiento detallado de tu situación.</p>'+
+      '<p style="font-size:13px;margin-top:14px">✅ <strong>Nos contactamos a la brevedad</strong> para darte una propuesta personalizada.</p>';
+  }
+}
+
+// Navegación
+document.getElementById('btn-next').addEventListener('click', function() {
+  if (step === 1) {
+    var n=document.getElementById('f-nombre').value, w=document.getElementById('f-wsp').value, m=document.getElementById('f-mail').value;
+    if (!n||!w||!m) { alert('Completá nombre, WhatsApp y mail para continuar.'); return; }
+    var emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m);
+    if (!emailOk) { alert('Ingresá un mail válido.'); return; }
+  }
+  if (step === 2 && !state.perfil) { alert('Elegí un perfil (Casa, Negocio o Campo) para continuar.'); return; }
+  if (step === totalSteps) {
+    // Reiniciar
+    step = 1;
+    document.getElementById('pvform').reset();
+    document.getElementById('dropzone-texto').textContent = 'Subir foto o PDF';
+    state = { perfil:null, rutina:null, red:null, fase:null, techo:null, electro:{}, facturaFile:null };
+    ['bloque-casa','bloque-negocio','bloque-campo'].forEach(function(id){ document.getElementById(id).style.display='none'; });
+    document.querySelectorAll('.pill').forEach(function(b){ b.setAttribute('aria-pressed','false'); });
+    showStep(1);
+    return;
+  }
+  step = Math.min(step+1, totalSteps);
+  showStep(step);
+});
+
+document.getElementById('btn-back').addEventListener('click', function() {
+  step = Math.max(step-1, 1);
+  showStep(step);
+});
+
+showStep(1);
+</script>
+</body>
+</html>
