@@ -37,14 +37,12 @@
   .ayuda { display:none; background:#f5f5f3; border-radius:8px; padding:10px 12px; font-size:12px; color:#555; margin-top:8px; line-height:1.5; }
   .electro-row { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid #eee; }
   .electro-row label { flex:1; font-size:13px; }
-  .resultado-box { background:#f0f7f2; border-radius:12px; padding:18px; margin-bottom:14px; border:1px solid #c5e0cf; }
-  .resultado-box .titulo { font-size:13px; color:#2d6a4f; margin:0 0 6px; }
-  .resultado-box .big { font-size:24px; font-weight:600; color:#1a1a1a; margin:4px 0; }
-  .resultado-box .big.highlight { color:#1a7a4c; }
-  .resultado-box .sub { font-size:14px; color:#444; margin:4px 0; }
-  .calculo-detalle { background:#f9f9f8; border-radius:10px; padding:14px; margin:12px 0; border:1px solid #e8e8e6; }
-  .calculo-detalle p { font-size:12px; color:#666; margin:3px 0; line-height:1.6; }
-  .calculo-detalle .paso { color:#1a7a4c; font-weight:600; }
+  /* Resultado */
+  .res-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+  .res-card { background:#f0f7f2; border:1px solid #c5e0cf; border-radius:12px; padding:16px; }
+  .res-card .titulo { font-size:11px; color:#2d6a4f; text-transform:uppercase; letter-spacing:0.5px; margin:0 0 6px; }
+  .res-card .valor { font-size:22px; font-weight:700; color:#1a1a1a; margin:0 0 2px; }
+  .res-card .sub { font-size:12px; color:#555; margin:0; }
   .nota { font-size:12px; color:#888; margin-top:4px; line-height:1.5; }
   a.link { color:#1a7a4c; text-decoration:none; }
   .dropzone { display:inline-flex; align-items:center; gap:8px; border:1px dashed #bbb; border-radius:8px; padding:10px 14px; cursor:pointer; font-size:13px; color:#555; }
@@ -54,10 +52,11 @@
   .spinner { width:32px; height:32px; border:3px solid #e3e3df; border-top-color:#1a7a4c; border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 12px; }
   @keyframes spin { to { transform:rotate(360deg); } }
   .error-box { background:#fff3f3; border:1px solid #f5c5c5; border-radius:10px; padding:14px; font-size:13px; color:#c0392b; }
-  .badge { display:inline-block; border-radius:6px; padding:3px 8px; font-size:11px; margin-bottom:10px; }
-  .badge-offgrid { background:#fff8e1; border:1px solid #f0c040; color:#856404; }
+  .badge { display:inline-block; border-radius:6px; padding:3px 8px; font-size:11px; margin-bottom:12px; }
   .badge-ongrid { background:#e8f3ec; border:1px solid #1a7a4c; color:#0f5a35; }
-  .confirm { font-size:13px; margin-top:14px; padding:12px; background:#f0f7f2; border-radius:8px; }
+  .badge-offgrid { background:#fff8e1; border:1px solid #f0c040; color:#856404; }
+  .confirm { font-size:13px; margin-top:14px; padding:12px; background:#f0f7f2; border-radius:8px; border:1px solid #c5e0cf; }
+  .aviso { font-size:12px; color:#888; margin-top:10px; line-height:1.6; }
 </style>
 </head>
 <body>
@@ -69,6 +68,7 @@
 
   <form id="pvform" onsubmit="return false;">
 
+    <!-- PASO 1 -->
     <div class="step active" data-step="1">
       <div class="group">
         <label class="q">Nombre y apellido</label>
@@ -84,6 +84,7 @@
       </div>
     </div>
 
+    <!-- PASO 2 -->
     <div class="step" data-step="2">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="group">
@@ -151,6 +152,7 @@
       </div>
     </div>
 
+    <!-- PASO 3 -->
     <div class="step" data-step="3">
       <div id="bloque-ongrid">
         <div class="group">
@@ -158,7 +160,7 @@
           <input type="number" id="f-kwh-mes" placeholder="Ej: 450" min="0">
           <p class="nota" style="margin-top:6px">Dato que figura en tu factura de luz. <a href="#" class="link" id="link-factura">No sé leer mi factura</a></p>
           <div class="ayuda" id="ayuda-factura">
-            Buscá el campo <strong>"Energía consumida"</strong> o <strong>"kWh"</strong> del período facturado. Aparece en la primera hoja cerca del total a pagar. En facturas EPEC (Córdoba) figura como <strong>"Energía Activa"</strong>.
+            Buscá el campo <strong>"Energía consumida"</strong> o <strong>"kWh"</strong> del período facturado. Aparece cerca del total a pagar. En EPEC (Córdoba) figura como <strong>"Energía Activa"</strong>.
           </div>
         </div>
         <div class="group">
@@ -211,6 +213,7 @@
       </div>
     </div>
 
+    <!-- PASO 4: RESULTADO -->
     <div class="step" data-step="4">
       <div id="resultado-box"></div>
     </div>
@@ -224,44 +227,45 @@
 </div>
 
 <script>
-// ¡Asegúrate de pegar el nuevo SCRIPT_URL cuando publiques la nueva versión en Apps Script!
 var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby4--Ux9c2bSZpvNvjgQ4s-LcxOdcDHqALOr7vKUP5afd14R8ZFvWKVFPvFyNs8Owm7/exec';
-var HSP_LOCAL = {Cordoba:4.8,SantaFe:4.6,BuenosAires:4.4,Tucuman:5.0,Salta:5.4,Jujuy:5.5,Catamarca:5.3,LaRioja:5.3,Santiago:5.1,Chaco:5.0,Otra:4.8};
+var HSP_LOCAL  = {Cordoba:4.8,SantaFe:4.6,BuenosAires:4.4,Tucuman:5.0,Salta:5.4,Jujuy:5.5,Catamarca:5.3,LaRioja:5.3,Santiago:5.1,Chaco:5.0,Otra:4.8};
 
 var state = {perfil:null,rutina:null,red:null,fase:null,techo:null,electro:{},facturaFile:null};
 var step = 1, totalSteps = 4;
 var pasoLabels = ['','Paso 1 de 4 · Tus datos','Paso 2 de 4 · Ubicación y perfil','Paso 3 de 4 · Consumo y techo','Resultado preliminar'];
 
+// Stepper
 var stepperEl = document.getElementById('stepper');
 for (var i=0;i<totalSteps;i++){var d=document.createElement('div');d.className='dot';stepperEl.appendChild(d);}
 function renderStepper(){var dots=stepperEl.children;for(var i=0;i<dots.length;i++)dots[i].className='dot'+(i<step?' active':'');}
 
+// Pills
 function pillGroup(id,cb){
-  var g=document.getElementById(id); if(!g) return;
+  var g=document.getElementById(id);if(!g)return;
   g.querySelectorAll('.pill').forEach(function(btn){
     btn.addEventListener('click',function(){
       g.querySelectorAll('.pill').forEach(function(b){b.setAttribute('aria-pressed','false');});
-      btn.setAttribute('aria-pressed','true'); cb(btn.getAttribute('data-value'));
+      btn.setAttribute('aria-pressed','true');cb(btn.getAttribute('data-value'));
     });
   });
 }
 
 pillGroup('perfil-pills',function(v){
-  state.perfil=v; state.rutina=null;
+  state.perfil=v;state.rutina=null;
   document.getElementById('bloque-casa').style.display=v==='Casa'?'block':'none';
   document.getElementById('bloque-negocio').style.display=v==='Negocio'?'block':'none';
   document.getElementById('bloque-campo').style.display=v==='Campo'?'block':'none';
-  if(v!=='Campo'){state.red=null;}
+  if(v!=='Campo') state.red=null;
 });
-pillGroup('rutina-pills',function(v){state.rutina=v;});
-pillGroup('negocio-pills',function(v){state.rutina=v;});
+pillGroup('rutina-pills',   function(v){state.rutina=v;});
+pillGroup('negocio-pills',  function(v){state.rutina=v;});
 pillGroup('campo-red-pills',function(v){state.rutina=v;});
 pillGroup('red-pills',function(v){
   state.red=v;
   document.getElementById('bloque-campo-red').style.display=v==='si'?'block':'none';
   if(v==='no') state.rutina=null;
 });
-pillGroup('fase-pills',function(v){state.fase=v;});
+pillGroup('fase-pills', function(v){state.fase=v;});
 pillGroup('techo-pills',function(v){state.techo=v;});
 
 document.getElementById('link-factura').addEventListener('click',function(e){
@@ -271,13 +275,14 @@ document.getElementById('link-factura').addEventListener('click',function(e){
 });
 
 document.getElementById('f-factura').addEventListener('change',function(e){
-  var file=e.target.files[0]; if(!file) return;
+  var file=e.target.files[0];if(!file)return;
   document.getElementById('dropzone-texto').textContent=file.name;
   var r=new FileReader();
   r.onload=function(){state.facturaFile={base64:r.result.split(',')[1],mimeType:file.type,fileName:file.name};};
   r.readAsDataURL(file);
 });
 
+// Electrodomésticos off-grid
 var electros=[
   {nombre:'Heladera',w:150},{nombre:'Bomba de agua',w:750},
   {nombre:'Iluminación LED (por ambiente)',w:15},{nombre:'Televisor',w:100},
@@ -286,65 +291,97 @@ var electros=[
 ];
 var listEl=document.getElementById('electro-list');
 electros.forEach(function(item,idx){
-  var row=document.createElement('div'); row.className='electro-row';
-  row.innerHTML='<input type="checkbox" id="el-'+idx+'"><label for="el-'+idx+'">'+item.nombre+' <span class="nota">('+item.w+'W)</span></label><input type="number" id="hr-'+idx+'" placeholder="hs/día" min="0" max="24" disabled style="width:80px">';
+  var row=document.createElement('div');row.className='electro-row';
+  row.innerHTML='<input type="checkbox" id="el-'+idx+'"><label for="el-'+idx+'">'+item.nombre+' <span class="nota">('+item.w+'W)</span></label><input type="number" id="hr-'+idx+'" placeholder="hs/dia" min="0" max="24" disabled style="width:80px">';
   listEl.appendChild(row);
   var chk=row.querySelector('#el-'+idx),hrs=row.querySelector('#hr-'+idx);
   chk.addEventListener('change',function(){hrs.disabled=!chk.checked;if(!chk.checked){hrs.value='';delete state.electro[idx];}});
   hrs.addEventListener('input',function(){state.electro[idx]={w:item.w,hr:parseFloat(hrs.value)||0,nombre:item.nombre};});
 });
 
-function showStep(n){
-  document.querySelectorAll('.step').forEach(function(s){s.classList.remove('active');});
-  document.querySelector('.step[data-step="'+n+'"]').classList.add('active');
-  document.getElementById('pasoLabel').textContent=pasoLabels[n];
-  document.getElementById('btn-back').disabled=n===1;
-  document.getElementById('btn-next').textContent=n===totalSteps?'Enviar otra consulta':(n===3?'Ver estimación':'Continuar');
-  if(n===3){
-    var off=state.perfil==='Campo'&&state.red==='no';
-    document.getElementById('bloque-ongrid').style.display=off?'none':'block';
-    document.getElementById('bloque-offgrid').style.display=off?'block':'none';
-  }
-  if(n===4) enviarFormulario();
-  renderStepper(); window.scrollTo(0,0);
-}
-
-// CÁLCULO LOCAL (Front-end fallback if Vercel/Apps Script fails)
+// Cálculo local (fallback idéntico a Code.gs)
 function calcularLocal(p){
   var hsp=HSP_LOCAL[p.provincia]||4.8;
-  
-  // OFF GRID
   if(p.perfil==='Campo'&&p.red==='no'){
     var cd=0;(p.electrodomesticos||[]).forEach(function(e){cd+=e.w*e.hr;});
     if(!cd) return {tipo:'offgrid',error:'Sin consumo cargado'};
     var bAh=(cd*1.5)/(0.5*12),wp=cd/(hsp*0.85),pan=Math.ceil(wp/630);
-    return {tipo:'offgrid',consumoDiarioWh:Math.round(cd),bancoAh:Math.round(bAh),paneles:pan,potenciaInstaladaKw:Number((pan*630/1000).toFixed(2)),voltajeSistema:12,autonomiaDias:1.5,hsp:hsp};
+    return {tipo:'offgrid',consumoDiarioWh:Math.round(cd),bancoAh:Math.round(bAh),paneles:pan,
+            potenciaInstaladaKw:Number((pan*630/1000).toFixed(2)),voltajeSistema:12,autonomiaDias:1.5};
   }
-  
-  // ON GRID
-  var kwhMes = parseFloat(p.kwhMes) || 0;
-  if (!kwhMes) return { tipo: 'ongrid', error: 'Sin consumo cargado' };
-
-  var consumoDiario = kwhMes / 30;
-  var porcDiurno = parseFloat(p.rutina) || 0.50;
-  var consumoDiurnoDiario = consumoDiario * porcDiurno;
-  
-  var potenciaNecesaria = consumoDiurnoDiario / (hsp * 0.8);
-  var potenciaInversorKw = potenciaNecesaria / 1.2;
-  var pan = Math.ceil((potenciaNecesaria * 1000) / 630);
-  var potenciaInstaladaKw = (pan * 630) / 1000;
-
+  var kwhMes=parseFloat(p.kwhMes)||0;
+  if(!kwhMes) return {tipo:'ongrid',error:'Sin consumo cargado'};
+  var porc=parseFloat(p.rutina)||0.50;
+  var cd=kwhMes/30;
+  var cdu=cd*porc;
+  var potMin=cdu/(hsp*0.8);
+  var potRec=potMin/1.2;
+  var pan=Math.ceil(potMin*1000/630);
   return {
-    tipo: 'ongrid',
-    potenciaInversorKw: Number(potenciaInversorKw.toFixed(2)),
-    paneles: pan,
-    potenciaInstaladaKw: Number(potenciaInstaladaKw.toFixed(2))
+    tipo:'ongrid',kwhMes:Math.round(kwhMes),
+    consumoDiario:Number(cd.toFixed(2)),
+    porcDiurno:Math.round(porc*100),
+    consumoDiurno:Number(cdu.toFixed(2)),
+    hsp:hsp,
+    potInversorMin:Number(potMin.toFixed(2)),
+    potInversorRec:Number(potRec.toFixed(2)),
+    paneles:pan,
+    potenciaInstaladaKw:Number((pan*630/1000).toFixed(2))
   };
+}
+
+function getProvNombre(){
+  var sel=document.getElementById('f-provincia');
+  return sel.options[sel.selectedIndex].text;
+}
+
+function mostrarResultado(r){
+  var box=document.getElementById('resultado-box');
+  var prov=getProvNombre();
+  if(r.error){
+    box.innerHTML='<div class="error-box">'+r.error+'. Volvé al paso anterior para completar el consumo.</div>';
+    return;
+  }
+  if(r.tipo==='offgrid'){
+    box.innerHTML=
+      '<span class="badge badge-offgrid">Sistema OFF-GRID</span>'+
+      '<div class="res-grid">'+
+        '<div class="res-card">'+
+          '<p class="titulo">Potencia instalada</p>'+
+          '<p class="valor">'+r.potenciaInstaladaKw+' kWp</p>'+
+          '<p class="sub">'+r.paneles+' paneles de 630W</p>'+
+        '</div>'+
+        '<div class="res-card">'+
+          '<p class="titulo">Banco de baterias</p>'+
+          '<p class="valor">'+r.bancoAh+' Ah</p>'+
+          '<p class="sub">a '+r.voltajeSistema+'V · '+r.autonomiaDias+' dias autonomia</p>'+
+        '</div>'+
+      '</div>'+
+      '<p class="aviso">Calculo preliminar basado en tus datos. El sistema real se define con un relevamiento tecnico detallado.</p>'+
+      '<div class="confirm">Nos contactamos a la brevedad para darte una propuesta personalizada.</div>';
+  } else {
+    box.innerHTML=
+      '<span class="badge badge-ongrid">Sistema ON-GRID</span>'+
+      '<div class="res-grid">'+
+        '<div class="res-card">'+
+          '<p class="titulo">Inversor recomendado</p>'+
+          '<p class="valor">'+r.potInversorRec+' kW</p>'+
+          '<p class="sub">potencia minima del inversor</p>'+
+        '</div>'+
+        '<div class="res-card">'+
+          '<p class="titulo">Paneles solares</p>'+
+          '<p class="valor">'+r.paneles+' unidades</p>'+
+          '<p class="sub">'+r.potenciaInstaladaKw+' kWp instalados (630W c/u)</p>'+
+        '</div>'+
+      '</div>'+
+      '<p class="aviso">Calculo aproximado basado en los datos ingresados. El sistema real y la seleccion de inversor se definen con un relevamiento detallado de tu instalacion.</p>'+
+      '<div class="confirm">Nos contactamos a la brevedad para darte una propuesta personalizada.</div>';
+  }
 }
 
 function enviarFormulario(){
   var box=document.getElementById('resultado-box');
-  box.innerHTML='<div class="loading-wrap"><div class="spinner"></div><p style="font-size:13px;color:#888">Calculando tu estimación...</p></div>';
+  box.innerHTML='<div class="loading-wrap"><div class="spinner"></div><p style="font-size:13px;color:#888">Calculando tu estimacion...</p></div>';
   var payload={
     nombre:document.getElementById('f-nombre').value,
     wsp:document.getElementById('f-wsp').value,
@@ -365,47 +402,28 @@ function enviarFormulario(){
     .catch(function(){mostrarResultado(calcularLocal(payload));});
 }
 
-// RENDER DE RESULTADO
-function mostrarResultado(r){
-  var box=document.getElementById('resultado-box');
-  if(r.error){box.innerHTML='<div class="error-box">'+r.error+'. Volvé al paso anterior para completar el consumo.</div>';return;}
-  
-  if(r.tipo==='offgrid'){
-    box.innerHTML=
-      '<span class="badge badge-offgrid">Sistema OFF-GRID</span>'+
-      '<div class="resultado-box">'+
-        '<p class="titulo">Potencia instalada estimada</p>'+
-        '<p class="big">'+r.potenciaInstaladaKw+' kWp</p>'+
-        '<p class="sub">'+r.paneles+' paneles de 630W</p>'+
-        '<p class="sub">Banco de baterías: ~'+r.bancoAh+' Ah a '+r.voltajeSistema+'V</p>'+
-        '<p class="sub">Autonomía: '+r.autonomiaDias+' días sin sol</p>'+
-      '</div>'+
-      '<p class="nota">Cálculo preliminar. El sistema real se define con un relevamiento técnico detallado.</p>'+
-      '<div class="confirm">Nos contactamos a la brevedad para darte una propuesta personalizada.</div>';
-  } else {
-    // Vista simplificada para ON-GRID solicitada
-    box.innerHTML=
-      '<span class="badge badge-ongrid">Sistema ON-GRID</span>'+
-      '<div class="resultado-box">'+
-        '<p class="titulo">Potencia instalada de paneles recomendada:</p>'+
-        '<p class="big">'+r.potenciaInstaladaKw+' kWp</p>'+
-        '<p class="sub">'+r.paneles+' paneles de 630W</p>'+
-        '<br>'+
-        '<p class="titulo" style="margin-top:8px;">Potencia del inversor recomendada:</p>'+
-        '<p class="big highlight">'+r.potenciaInversorKw+' kW</p>'+
-      '</div>'+
-      '<p class="nota">Cálculo aproximado considerando pérdidas de sistema y margen de seguridad. El sistema real se calcula con un relevamiento detallado.</p>'+
-      '<div class="confirm">Nos contactamos a la brevedad para darte una propuesta personalizada.</div>';
+function showStep(n){
+  document.querySelectorAll('.step').forEach(function(s){s.classList.remove('active');});
+  document.querySelector('.step[data-step="'+n+'"]').classList.add('active');
+  document.getElementById('pasoLabel').textContent=pasoLabels[n];
+  document.getElementById('btn-back').disabled=n===1;
+  document.getElementById('btn-next').textContent=n===totalSteps?'Enviar otra consulta':(n===3?'Ver estimacion':'Continuar');
+  if(n===3){
+    var off=state.perfil==='Campo'&&state.red==='no';
+    document.getElementById('bloque-ongrid').style.display=off?'none':'block';
+    document.getElementById('bloque-offgrid').style.display=off?'block':'none';
   }
+  if(n===4) enviarFormulario();
+  renderStepper();window.scrollTo(0,0);
 }
 
 document.getElementById('btn-next').addEventListener('click',function(){
   if(step===1){
     var n=document.getElementById('f-nombre').value,w=document.getElementById('f-wsp').value,m=document.getElementById('f-mail').value;
-    if(!n||!w||!m){alert('Completá nombre, WhatsApp y mail para continuar.');return;}
-    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m)){alert('Ingresá un mail válido.');return;}
+    if(!n||!w||!m){alert('Completa nombre, WhatsApp y mail para continuar.');return;}
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m)){alert('Ingresa un mail valido.');return;}
   }
-  if(step===2&&!state.perfil){alert('Elegí un perfil para continuar.');return;}
+  if(step===2&&!state.perfil){alert('Elige un perfil para continuar.');return;}
   if(step===totalSteps){
     step=1;document.getElementById('pvform').reset();
     document.getElementById('dropzone-texto').textContent='Subir foto o PDF';
