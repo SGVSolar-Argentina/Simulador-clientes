@@ -40,6 +40,7 @@
   .resultado-box { background:#f0f7f2; border-radius:12px; padding:18px; margin-bottom:14px; border:1px solid #c5e0cf; }
   .resultado-box .titulo { font-size:13px; color:#2d6a4f; margin:0 0 6px; }
   .resultado-box .big { font-size:24px; font-weight:600; color:#1a1a1a; margin:4px 0; }
+  .resultado-box .big.highlight { color:#1a7a4c; }
   .resultado-box .sub { font-size:14px; color:#444; margin:4px 0; }
   .calculo-detalle { background:#f9f9f8; border-radius:10px; padding:14px; margin:12px 0; border:1px solid #e8e8e6; }
   .calculo-detalle p { font-size:12px; color:#666; margin:3px 0; line-height:1.6; }
@@ -68,7 +69,6 @@
 
   <form id="pvform" onsubmit="return false;">
 
-    <!-- PASO 1 -->
     <div class="step active" data-step="1">
       <div class="group">
         <label class="q">Nombre y apellido</label>
@@ -84,7 +84,6 @@
       </div>
     </div>
 
-    <!-- PASO 2 -->
     <div class="step" data-step="2">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="group">
@@ -121,8 +120,8 @@
         <label class="q">Tu rutina diaria es más bien...</label>
         <div class="pills" id="rutina-pills">
           <button type="button" class="pill card-pill" data-value="0.30">Mayormente fuera de casa<small>trabajo, escuela</small></button>
-          <button type="button" class="pill card-pill" data-value="0.45">Mitad y mitad<small>algunos días en casa</small></button>
-          <button type="button" class="pill card-pill" data-value="0.60">Casi siempre en casa<small>home office, jubilados</small></button>
+          <button type="button" class="pill card-pill" data-value="0.50">Mitad y mitad<small>algunos días en casa</small></button>
+          <button type="button" class="pill card-pill" data-value="0.80">Casi siempre en casa<small>home office, jubilados</small></button>
         </div>
       </div>
 
@@ -130,8 +129,8 @@
         <label class="q">Consumo nocturno del negocio</label>
         <div class="pills" id="negocio-pills">
           <button type="button" class="pill card-pill" data-value="0.80">Solo horario diurno<small>cierro y corto todo</small></button>
-          <button type="button" class="pill card-pill" data-value="0.65">Consumo bajo de noche<small>cámaras, alarma, stand-by</small></button>
-          <button type="button" class="pill card-pill" data-value="0.45">Consumo alto de noche<small>heladeras, freezers, producción</small></button>
+          <button type="button" class="pill card-pill" data-value="0.60">Consumo bajo de noche<small>cámaras, alarma, stand-by</small></button>
+          <button type="button" class="pill card-pill" data-value="0.50">Consumo alto de noche<small>heladeras, freezers, producción</small></button>
         </div>
       </div>
 
@@ -152,7 +151,6 @@
       </div>
     </div>
 
-    <!-- PASO 3 -->
     <div class="step" data-step="3">
       <div id="bloque-ongrid">
         <div class="group">
@@ -213,7 +211,6 @@
       </div>
     </div>
 
-    <!-- PASO 4: RESULTADO -->
     <div class="step" data-step="4">
       <div id="resultado-box"></div>
     </div>
@@ -227,6 +224,7 @@
 </div>
 
 <script>
+// ¡Asegúrate de pegar el nuevo SCRIPT_URL cuando publiques la nueva versión en Apps Script!
 var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby4--Ux9c2bSZpvNvjgQ4s-LcxOdcDHqALOr7vKUP5afd14R8ZFvWKVFPvFyNs8Owm7/exec';
 var HSP_LOCAL = {Cordoba:4.8,SantaFe:4.6,BuenosAires:4.4,Tucuman:5.0,Salta:5.4,Jujuy:5.5,Catamarca:5.3,LaRioja:5.3,Santiago:5.1,Chaco:5.0,Otra:4.8};
 
@@ -301,7 +299,7 @@ function showStep(n){
   document.querySelector('.step[data-step="'+n+'"]').classList.add('active');
   document.getElementById('pasoLabel').textContent=pasoLabels[n];
   document.getElementById('btn-back').disabled=n===1;
-  document.getElementById('btn-next').textContent=n===totalSteps?'Enviar otra consulta':(n===3?'Ver estimacion':'Continuar');
+  document.getElementById('btn-next').textContent=n===totalSteps?'Enviar otra consulta':(n===3?'Ver estimación':'Continuar');
   if(n===3){
     var off=state.perfil==='Campo'&&state.red==='no';
     document.getElementById('bloque-ongrid').style.display=off?'none':'block';
@@ -311,30 +309,42 @@ function showStep(n){
   renderStepper(); window.scrollTo(0,0);
 }
 
-function getProvNombre(){
-  var sel=document.getElementById('f-provincia');
-  return sel.options[sel.selectedIndex].text;
-}
-
+// CÁLCULO LOCAL (Front-end fallback if Vercel/Apps Script fails)
 function calcularLocal(p){
   var hsp=HSP_LOCAL[p.provincia]||4.8;
+  
+  // OFF GRID
   if(p.perfil==='Campo'&&p.red==='no'){
     var cd=0;(p.electrodomesticos||[]).forEach(function(e){cd+=e.w*e.hr;});
     if(!cd) return {tipo:'offgrid',error:'Sin consumo cargado'};
     var bAh=(cd*1.5)/(0.5*12),wp=cd/(hsp*0.85),pan=Math.ceil(wp/630);
     return {tipo:'offgrid',consumoDiarioWh:Math.round(cd),bancoAh:Math.round(bAh),paneles:pan,potenciaInstaladaKw:Number((pan*630/1000).toFixed(2)),voltajeSistema:12,autonomiaDias:1.5,hsp:hsp};
   }
-  var kwhMes=parseFloat(p.kwhMes)||0;
-  if(!kwhMes) return {tipo:'ongrid',error:'Sin consumo cargado'};
-  var porc=parseFloat(p.rutina)||0.50;
-  var cd=kwhMes/30, cdd=cd*porc, potNec=cdd/hsp, potMar=potNec*1.25;
-  var pan=Math.ceil(potMar*1000/630);
-  return {tipo:'ongrid',kwhMes:Math.round(kwhMes),consumoDiario:Number(cd.toFixed(2)),porcDiurno:Math.round(porc*100),consumoDiurnoDiario:Number(cdd.toFixed(2)),hsp:hsp,potenciaNecesariaKw:Number(potNec.toFixed(2)),potenciaConMargenKw:Number(potMar.toFixed(2)),paneles:pan,potenciaInstaladaKw:Number((pan*630/1000).toFixed(2))};
+  
+  // ON GRID
+  var kwhMes = parseFloat(p.kwhMes) || 0;
+  if (!kwhMes) return { tipo: 'ongrid', error: 'Sin consumo cargado' };
+
+  var consumoDiario = kwhMes / 30;
+  var porcDiurno = parseFloat(p.rutina) || 0.50;
+  var consumoDiurnoDiario = consumoDiario * porcDiurno;
+  
+  var potenciaNecesaria = consumoDiurnoDiario / (hsp * 0.8);
+  var potenciaInversorKw = potenciaNecesaria / 1.2;
+  var pan = Math.ceil((potenciaNecesaria * 1000) / 630);
+  var potenciaInstaladaKw = (pan * 630) / 1000;
+
+  return {
+    tipo: 'ongrid',
+    potenciaInversorKw: Number(potenciaInversorKw.toFixed(2)),
+    paneles: pan,
+    potenciaInstaladaKw: Number(potenciaInstaladaKw.toFixed(2))
+  };
 }
 
 function enviarFormulario(){
   var box=document.getElementById('resultado-box');
-  box.innerHTML='<div class="loading-wrap"><div class="spinner"></div><p style="font-size:13px;color:#888">Calculando tu estimacion...</p></div>';
+  box.innerHTML='<div class="loading-wrap"><div class="spinner"></div><p style="font-size:13px;color:#888">Calculando tu estimación...</p></div>';
   var payload={
     nombre:document.getElementById('f-nombre').value,
     wsp:document.getElementById('f-wsp').value,
@@ -355,10 +365,11 @@ function enviarFormulario(){
     .catch(function(){mostrarResultado(calcularLocal(payload));});
 }
 
+// RENDER DE RESULTADO
 function mostrarResultado(r){
   var box=document.getElementById('resultado-box');
-  var prov=getProvNombre();
   if(r.error){box.innerHTML='<div class="error-box">'+r.error+'. Volvé al paso anterior para completar el consumo.</div>';return;}
+  
   if(r.tipo==='offgrid'){
     box.innerHTML=
       '<span class="badge badge-offgrid">Sistema OFF-GRID</span>'+
@@ -366,34 +377,24 @@ function mostrarResultado(r){
         '<p class="titulo">Potencia instalada estimada</p>'+
         '<p class="big">'+r.potenciaInstaladaKw+' kWp</p>'+
         '<p class="sub">'+r.paneles+' paneles de 630W</p>'+
-        '<p class="sub">Banco de baterias: ~'+r.bancoAh+' Ah a '+r.voltajeSistema+'V</p>'+
-        '<p class="sub">Autonomia: '+r.autonomiaDias+' dias sin sol</p>'+
+        '<p class="sub">Banco de baterías: ~'+r.bancoAh+' Ah a '+r.voltajeSistema+'V</p>'+
+        '<p class="sub">Autonomía: '+r.autonomiaDias+' días sin sol</p>'+
       '</div>'+
-      '<div class="calculo-detalle">'+
-        '<p><span class="paso">Consumo diario estimado:</span> '+r.consumoDiarioWh+' Wh/dia</p>'+
-        '<p><span class="paso">HSP '+prov+':</span> '+r.hsp+' h/dia</p>'+
-        '<p><span class="paso">Autonomia:</span> '+r.autonomiaDias+' dias (DOD 50%)</p>'+
-      '</div>'+
-      '<p class="nota">Calculo preliminar. El sistema real se define con un relevamiento tecnico detallado.</p>'+
+      '<p class="nota">Cálculo preliminar. El sistema real se define con un relevamiento técnico detallado.</p>'+
       '<div class="confirm">Nos contactamos a la brevedad para darte una propuesta personalizada.</div>';
   } else {
+    // Vista simplificada para ON-GRID solicitada
     box.innerHTML=
       '<span class="badge badge-ongrid">Sistema ON-GRID</span>'+
       '<div class="resultado-box">'+
-        '<p class="titulo">Con los datos proporcionados necesitas un equipo de</p>'+
-        '<p class="big">'+r.potenciaInstaladaKw+' kWp instalados</p>'+
+        '<p class="titulo">Potencia instalada de paneles recomendada:</p>'+
+        '<p class="big">'+r.potenciaInstaladaKw+' kWp</p>'+
         '<p class="sub">'+r.paneles+' paneles de 630W</p>'+
-        '<p class="sub">Potencia minima requerida: '+r.potenciaConMargenKw+' kW</p>'+
+        '<br>'+
+        '<p class="titulo" style="margin-top:8px;">Potencia del inversor recomendada:</p>'+
+        '<p class="big highlight">'+r.potenciaInversorKw+' kW</p>'+
       '</div>'+
-      '<div class="calculo-detalle">'+
-        '<p><span class="paso">Consumo mensual:</span> '+r.kwhMes+' kWh / 30 = '+r.consumoDiario+' kWh/dia</p>'+
-        '<p><span class="paso">Consumo diurno ('+r.porcDiurno+'%):</span> '+r.consumoDiurnoDiario+' kWh/dia</p>'+
-        '<p><span class="paso">HSP '+prov+':</span> '+r.hsp+' h/dia</p>'+
-        '<p><span class="paso">Potencia necesaria:</span> '+r.consumoDiurnoDiario+' / '+r.hsp+' = '+r.potenciaNecesariaKw+' kW</p>'+
-        '<p><span class="paso">Con margen +25%:</span> '+r.potenciaNecesariaKw+' x 1,25 = '+r.potenciaConMargenKw+' kW</p>'+
-        '<p><span class="paso">Paneles 630W:</span> '+r.potenciaConMargenKw+' kW / 0,63 kW = '+r.paneles+' paneles</p>'+
-      '</div>'+
-      '<p class="nota">Calculo aproximado con margen de seguridad del 25%. El sistema real se calcula con un relevamiento detallado.</p>'+
+      '<p class="nota">Cálculo aproximado considerando pérdidas de sistema y margen de seguridad. El sistema real se calcula con un relevamiento detallado.</p>'+
       '<div class="confirm">Nos contactamos a la brevedad para darte una propuesta personalizada.</div>';
   }
 }
@@ -401,10 +402,10 @@ function mostrarResultado(r){
 document.getElementById('btn-next').addEventListener('click',function(){
   if(step===1){
     var n=document.getElementById('f-nombre').value,w=document.getElementById('f-wsp').value,m=document.getElementById('f-mail').value;
-    if(!n||!w||!m){alert('Completa nombre, WhatsApp y mail para continuar.');return;}
-    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m)){alert('Ingresa un mail valido.');return;}
+    if(!n||!w||!m){alert('Completá nombre, WhatsApp y mail para continuar.');return;}
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m)){alert('Ingresá un mail válido.');return;}
   }
-  if(step===2&&!state.perfil){alert('Elige un perfil para continuar.');return;}
+  if(step===2&&!state.perfil){alert('Elegí un perfil para continuar.');return;}
   if(step===totalSteps){
     step=1;document.getElementById('pvform').reset();
     document.getElementById('dropzone-texto').textContent='Subir foto o PDF';
