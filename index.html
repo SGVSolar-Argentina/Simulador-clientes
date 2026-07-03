@@ -68,7 +68,6 @@
 
   <form id="pvform" onsubmit="return false;">
 
-    <!-- PASO 1 -->
     <div class="step active" data-step="1">
       <div class="group">
         <label class="q">Nombre y apellido</label>
@@ -84,7 +83,6 @@
       </div>
     </div>
 
-    <!-- PASO 2 -->
     <div class="step" data-step="2">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="group">
@@ -152,7 +150,6 @@
       </div>
     </div>
 
-    <!-- PASO 3 -->
     <div class="step" data-step="3">
       <div id="bloque-ongrid">
         <div class="group">
@@ -213,7 +210,6 @@
       </div>
     </div>
 
-    <!-- PASO 4: RESULTADO -->
     <div class="step" data-step="4">
       <div id="resultado-box"></div>
     </div>
@@ -343,23 +339,18 @@ function mostrarResultado(r){
     return;
   }
   if(r.tipo==='offgrid'){
+    // Vista exclusiva para Off-Grid (Sin resultados numéricos)
     box.innerHTML=
       '<span class="badge badge-offgrid">Sistema OFF-GRID</span>'+
-      '<div class="res-grid">'+
-        '<div class="res-card">'+
-          '<p class="titulo">Potencia instalada</p>'+
-          '<p class="valor">'+r.potenciaInstaladaKw+' kWp</p>'+
-          '<p class="sub">'+r.paneles+' paneles de 630W</p>'+
-        '</div>'+
-        '<div class="res-card">'+
-          '<p class="titulo">Banco de baterias</p>'+
-          '<p class="valor">'+r.bancoAh+' Ah</p>'+
-          '<p class="sub">a '+r.voltajeSistema+'V · '+r.autonomiaDias+' dias autonomia</p>'+
-        '</div>'+
+      '<div class="res-card" style="text-align:center; padding:30px 20px; background:#fff; border: 1px solid #f0c040;">'+
+        '<p class="valor" style="font-size:18px; color:#856404; margin-bottom:10px;">¡Solicitud enviada con éxito!</p>'+
+        '<p class="sub" style="font-size:14px; color:#555; line-height:1.5;">Los sistemas fuera de la red (aislados) requieren un análisis técnico muy preciso de los equipos a conectar y sus picos de arranque.</p>'+
       '</div>'+
-      '<p class="aviso">Calculo preliminar basado en tus datos. El sistema real se define con un relevamiento tecnico detallado.</p>'+
-      '<div class="confirm">Nos contactamos a la brevedad para darte una propuesta personalizada.</div>';
+      '<div class="confirm" style="text-align:center; font-size:14px; font-weight:600; padding:16px; background:#fff8e1; border:1px solid #f0c040; color:#856404;">'+
+        'Un asesor técnico se va a contactar a la brevedad para dimensionar tu sistema.'+
+      '</div>';
   } else {
+    // Vista normal para On-Grid
     box.innerHTML=
       '<span class="badge badge-ongrid">Sistema ON-GRID</span>'+
       '<div class="res-grid">'+
